@@ -1,0 +1,102 @@
+---
+title: "Analisis Correspondencias Canonicas"
+author: "franmarq@gmail.com"
+date: '2022-11-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE, message = FALSE)
+
+```
+
+Lectura del conjunto de datos
+
+
+```{r data}
+data<-read.csv("BaseMedidasECOBebe3.csv",header=T,sep = ',')
+names(data)
+
+X <- data[, 3:5]
+Y <- data[,6:9]
+X
+Y
+```
+
+La variable Sexo no será incluida porque su naturaleza es binaria. Iniciamos el análisis examinando las correlaciones bivariadas de las variables de ambos conjuntos, independientes (X) y dependientes (Y) 
+
+```{r corrbivariante}
+require(GGally)
+ggpairs(X, lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+ggpairs(Y, lower = list(continuous = "smooth"),
+        diag = list(continuous = "barDiag"), axisLabels = "none")
+
+```
+
+
+Luego, calculamos la matrix de correlaciones
+
+```{r matcorr}
+
+require(CCA)
+matriz.corr<-matcor(X,Y)
+matriz.corr
+```
+
+usamos ahora el grafico de la imagen de la matriz de correlaciones
+
+```{r grafmatcorr}
+img.matcor(matriz.corr,type=2)
+
+```
+
+Obtenemos ahora las correlaciones canonicas, empezando por la primera variable canonica
+
+```{r corcandata}
+cca.datos<-cc(X,Y)
+cca.datos$cor[1]
+
+```
+
+ahora bien, usamos la siguiente función para obtener las primeras variables canónicas
+
+```{r varcanon}
+print("Coeficientes X")
+cca.datos$xcoef[,1]
+print("Coeficientes Y")
+cca.datos$ycoef[,1]
+
+```
+
+Ahora, obtenemos gráficos adicionales que nos pueden servir de apoyo para el análisis
+
+```{r graf corrcanplus}
+plt.cc(cca.datos,var.label=TRUE)
+plot(cca.datos$cor,type="b")
+
+```
+
+Ahora vamos a aplicar los test
+
+```{r testcorrcan}
+require(CCP)
+rho<- cca.datos$cor
+n<- dim(X)[1]
+p<-length(X)
+q<-length(Y)
+p.asym(rho,n,p,q)
+
+```
+
+Del resultado obtenido, al tener tres variables canonicas se resuelven los siguientes contrastes:
+
+H0:p1=p2=p3=0, el segundo el de H0:p2=p3=0 y por último H0:p3=0, resultando:
+
+Primer contraste: p-valor menor a 0.05 por lo que se rechaza HO, por tanto podemos esperar que al menos p1 y p2 sean significativos.
+
+Segundo contraste: p-valor menor a 0.05 por lo que se rechaza HO, por tanto podemos esperar que al menos p2 sea significativa.
+
+tercer contraste: p-valor mayor a 0.05 por lo que no se rechaza HO, esto indica que la tercera variable canonica no sea significativa.
+
+
